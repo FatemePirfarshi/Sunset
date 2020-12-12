@@ -6,6 +6,7 @@ import android.animation.ObjectAnimator;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AccelerateInterpolator;
@@ -22,6 +23,9 @@ public class SunsetFragment extends Fragment {
     private int mBlueSkyColor;
     private int mSunsetSkyColor;
     private int mNightSkyColor;
+
+    private boolean isSunrise = false;
+    private boolean isRunningAnim = false;
 
     public SunsetFragment() {
         // Required empty public constructor
@@ -57,6 +61,7 @@ public class SunsetFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 startAnimation();
+//                isRunningAnim = false;
             }
         });
 
@@ -66,7 +71,14 @@ public class SunsetFragment extends Fragment {
     private void startAnimation() {
         float sunStartY = mBinding.sun.getTop(); //10.000
         float sunEndY = mBinding.sea.getTop(); //100.000
-
+        float seaStartY = mBinding.sea.getBottom();
+        float seaEndY = mBinding.sky.getBottom();
+//        if(isRunningAnim){
+//            mBinding.sea.clearAnimation();
+//            mBinding.sky.clearAnimation();
+//            mBinding.sun.clearAnimation();
+//            isSunrise = isSunrise ? false : true;
+//        }
         ObjectAnimator heightAnimator = ObjectAnimator
                 .ofFloat(mBinding.sun, "y", sunStartY, sunEndY)
                 .setDuration(4000);
@@ -92,20 +104,51 @@ public class SunsetFragment extends Fragment {
                 .setDuration(4000);
         sunriseAnimator.setEvaluator(new ArgbEvaluator());
 
+
+        ObjectAnimator shadowAnimator = ObjectAnimator
+                .ofFloat(mBinding.sunShadow, "y", seaStartY, seaEndY)
+                .setDuration(4000);
+        shadowAnimator.setInterpolator(new AccelerateInterpolator());
+
+        ObjectAnimator reverseShadowAnimator = ObjectAnimator
+                .ofFloat(mBinding.sunShadow, "y", seaEndY, seaStartY)
+                .setDuration(4000);
+        reverseShadowAnimator.setInterpolator(new AccelerateInterpolator());
         /*heightAnimator.start();
         sunsetAnimator.start();
         nightAnimator.start();*/
-
+        isRunningAnim = true;
         AnimatorSet animatorSet = new AnimatorSet();
-        animatorSet
-                .play(heightAnimator)
-                .with(sunsetAnimator)
-                .before(nightAnimator);
-        animatorSet
-                .play(nightAnimator)
-                .before(reverseHeightAnimator)
-                .before(sunriseAnimator);
+        if (!isSunrise) {
+            animatorSet
+                    .play(heightAnimator)
+                    .with(sunsetAnimator)
+                    .with(shadowAnimator)
+                    .before(nightAnimator);
+//            shadowAnimator.start();
+            isSunrise = true;
+//            isRunningAnim = false;
+        } else {
+            animatorSet
+                    .play(nightAnimator)
+                    .before(reverseShadowAnimator)
+                    .before(reverseHeightAnimator)
+                    .before(sunriseAnimator);
+//            reverseShadowAnimator.start();
+            isSunrise = false;
+//            isRunningAnim = false;
+        }
 
         animatorSet.start();
+//        if(isRunningAnim) {
+//            animatorSet.cancel();
+//        }
+//        mBinding.rootLayout.setOnTouchListener(new View.OnTouchListener() {
+//            @Override
+//            public boolean onTouch(View v, MotionEvent event) {
+//                animatorSet.start();
+//                return true;
+//            }
+//        });
     }
 }
